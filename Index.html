@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>MathBlaster Ultra — Game Toán Pro</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  /* ============================
+     Styling: modern glass + responsive
+     ============================ */
+  :root{
+    --bg1: #0f1724;
+    --card: rgba(255,255,255,0.06);
+    --accent: #7c3aed;
+    --accent-2: #06b6d4;
+    --muted: #9aa4b2;
+    --glass: rgba(255,255,255,0.04);
+    --success: #34d399;
+    --danger: #fb7185;
+  }
+  html,body{height:100%;margin:0;font-family:Inter, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Comic Sans MS";}
+  body{
+    background: radial-gradient(1200px 600px at 10% 10%, rgba(124,58,237,0.12), transparent),
+                radial-gradient(1000px 500px at 90% 85%, rgba(6,182,212,0.06), transparent),
+                linear-gradient(180deg, #071028 0%, #081428 100%);
+    -webkit-font-smoothing:antialiased;color:#e6eef8;
+    display:flex;align-items:center;justify-content:center;padding:18px;
+  }
+  .app{
+    width:100%; max-width:1200px; height:86vh; border-radius:16px; overflow:hidden;
+    display:grid; grid-template-columns: 1fr 420px; gap:18px;
+    box-shadow: 0 20px 60px rgba(2,6,23,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+    border:1px solid rgba(255,255,255,0.04);
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  }
+  .left{ position:relative; padding:12px; display:flex; flex-direction:column; }
+  .gameFrame{ flex:1; border-radius:12px; overflow:hidden; position:relative; background:linear-gradient(180deg,#071a2d 0%, #082033 100%); box-shadow: inset 0 0 80px rgba(0,0,0,0.35); }
+  canvas{ width:100%; height:100%; display:block; background:transparent; }
+  .topbar{ height:64px; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 12px; }
+  .brand{ display:flex; gap:12px; align-items:center;}
+  .logo{ width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2)); display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;box-shadow:0 3px 20px rgba(124,58,237,0.18); }
+  .title{ font-size:18px;font-weight:700; color:#eaf2ff; }
+  .sub{ font-size:12px;color:var(--muted); margin-top:2px; }
+  .controlsRow{ display:flex; gap:8px; align-items:center; }
+  .chip{ background:var(--card); padding:8px 12px; border-radius:999px; font-weight:700; color:#d6e8ff; font-size:13px; display:flex;gap:8px; align-items:center; }
+  .btn{ background:linear-gradient(180deg,var(--accent), #5b21b6); border:none;color:white;padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:700; box-shadow:0 6px 18px rgba(92,24,163,0.16); }
+  .btn.ghost{ background:transparent; border:1px solid rgba(255,255,255,0.06); box-shadow:none; color:#cfefff; }
+  .right{ padding:16px; display:flex; flex-direction:column; gap:12px; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); }
+  .card{ background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:12px; padding:12px; border:1px solid rgba(255,255,255,0.03); }
+  .card h3{ margin:0 0 8px 0; font-size:15px; color:#e8f3ff; }
+  .statRow{ display:flex; justify-content:space-between; padding:6px 0; color:var(--muted); font-size:13px; }
+  .progress{ height:10px; background:rgba(255,255,255,0.03); border-radius:999px; overflow:hidden; margin-top:6px; }
+  .progress > i{ display:block; height:100%; background:linear-gradient(90deg,var(--accent),var(--accent-2)); width:20%; }
+  .shopGrid{ display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+  .shopItem{ background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:10px; border-radius:10px; display:flex; gap:8px; align-items:center; border:1px solid rgba(255,255,255,0.02); }
+  .shopItem .ico{ width:44px; height:44px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; }
+  .price{ font-weight:800; color:#ffd54f; }
+  .small{ font-size:13px; color:var(--muted); }
+  @media (max-width:980px){ .app{ grid-template-columns: 1fr; height:94vh; } .right{ order:2; height:360px; overflow:auto; } }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="left">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">MB</div>
+        <div>
+          <div class="title">MathBlaster Ultra</div>
+          <div class="sub">Học + Chơi — nâng cấp súng, tranh tài với bạn bè</div>
+        </div>
+      </div>
+      <div class="controlsRow">
+        <div class="chip">Coins: <span id="coins">0</span></div>
+        <div class="chip">Score: <span id="score">0</span></div>
+        <button class="btn" id="btnStart">BẮT ĐẦU</button>
+        <button class="btn ghost" id="btnPause">PAUSE</button>
+      </div>
+    </div>
+    <div class="gameFrame card">
+      <canvas id="gameCanvas"></canvas>
+      <div id="overlayHint" style="position:absolute;left:20px;bottom:18px;color:#d6e8ff;font-weight:700"></div>
+    </div>
+    <div style="height:8px"></div>
+  </div>
+
+  <div class="right">
+    <div class="card" id="playerCard">
+      <h3>Người chơi</h3>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div style="width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800">🙂</div>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div id="playerName" style="font-weight:800">Khách</div>
+              <div class="small">Level <span id="playerLevel">1</span></div>
+            </div>
+            <div style="text-align:right">
+              <div class="small">Top Score</div>
+              <div style="font-weight:800" id="topScore">0</div>
+            </div>
+          </div>
+          <div style="height:8px"></div>
+          <div class="progress"><i id="expBar" style="width:10%"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Vũ khí & Nâng cấp</h3>
+      <div class="small">Tiền dùng để mua nâng cấp:</div>
+      <div style="height:8px"></div>
+      <div class="shopGrid" id="shopGrid"></div>
+    </div>
+
+    <div class="card">
+      <h3>Achievements</h3>
+      <div id="achList" style="display:flex;flex-direction:column;gap:6px"></div>
+    </div>
+
+    <div class="card">
+      <h3>Cài đặt & Lưu</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn ghost" id="btnSettings">Cài đặt</button>
+        <button class="btn ghost" id="btnReset">Reset</button>
+        <button class="btn" id="btnExport">Xuất điểm</button>
+      </div>
+      <div style="height:8px"></div>
+      <div class="small">Gợi ý: trả lời đúng nhiều để tích coins, lên level mở skin mới.</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ===============================
+   MathBlaster Ultra — Single-file
+   (index.html)
+   =============================== */
+
+const $ = id => document.getElementById(id);
+const rand = (a,b)=> Math.floor(Math.random()*(b-a+1))+a;
+const clamp = (v,a,b)=> Math.max(a,Math.min(b,v));
+const now = ()=> performance.now();
+
+const STORAGE_KEY = 'mathblaster_state_v1';
+function loadState(){ try{ const raw = localStorage.getItem(STORAGE_KEY); if(raw) return JSON.parse(raw); }catch(e){} return { profile: { name:'Khách', emoji:'🙂', level:1, xp:0, topScore:0 }, coins: 0, upgrades: { fireRate:1, bulletSpeed:1, multiShot:1, autoFire:0, penetration:0 }, skins: { cannon: 'default' }, achievements: {}, leaders: [], lastDaily: 0 }; }
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+let state = loadState();
+$('playerName').textContent = state.profile.name || 'Khách';
+$('coins').textContent = state.coins;
+$('score').textContent = 0;
+$('playerLevel').textContent = state.profile.level;
+$('topScore').textContent = state.profile.topScore;
+
+const canvas = $('gameCanvas');
+const ctx = canvas.getContext('2d');
+function resizeCanvas(){ canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; }
+window.addEventListener('resize', resizeCanvas); resizeCanvas();
+
+let gameRunning = false, gamePaused = false;
+let score = 0, coinsEarnedThisRun = 0, timeLeft = 60;
+let currentQuestion = null, balls = [], bulletList = [], particles = [], powerups = [];
+let lastTick = now(), input = { left:false, right:false }, touchDir = 0;
+let lastShotAt = 0, player = { x:0, y:0, w:90, h:18 };
+
+const shopItems = [
+  { id:'fireRate', title:'Tốc độ bắn', basePrice:50, desc:'Giảm thời gian giữa các lần bắn.' },
+  { id:'bulletSpeed', title:'Tốc độ viên đạn', basePrice:40, desc:'Viên đạn di chuyển nhanh hơn.' },
+  { id:'multiShot', title:'Bắn nhiều viên', basePrice:120, desc:'Bắn nhiều viên cùng lúc.' },
+  { id:'autoFire', title:'Auto-fire (tự động)', basePrice:200, desc:'Tự động bắn khi giữ nút.' },
+  { id:'penetration', title:'Đạn xuyên', basePrice:150, desc:'Đạn xuyên qua nhiều quả bóng.' }
+];
+
+function shopPrice(itemId, level){ const cfg = shopItems.find(s=>s.id===itemId); if(!cfg) return 9999; return Math.round(cfg.basePrice * Math.pow(1.7, level-1)); }
+function renderShop(){ const grid = $('shopGrid'); grid.innerHTML = ''; for(const s of shopItems){ const lvl = state.upgrades[s.id] || 0; const price = shopPrice(s.id, lvl+1); const div = document.createElement('div'); div.className='shopItem'; div.innerHTML = `<div class="ico" style="background:linear-gradient(135deg,var(--accent),var(--accent-2));color:white">${s.title.charAt(0)}</div><div style="flex:1"><div style="font-weight:800">${s.title} <span style="font-weight:600;color:var(--muted);font-size:12px">Lv ${lvl}</span></div><div class="small">${s.desc}</div></div><div style="text-align:right"><div class="price">${price}</div><button class="btn" data-id="${s.id}" style="margin-top:6px">MUA</button></div>`; grid.appendChild(div); div.querySelector('button').onclick = ()=> buyUpgrade(s.id); } }
+function buyUpgrade(id){ const cur = state.upgrades[id] || 0; const price = shopPrice(id, cur+1); if(state.coins < price){ flashHint('Không đủ coins!'); return; } state.coins -= price; state.upgrades[id] = (state.upgrades[id] || 0) + 1; $('coins').textContent = state.coins; renderShop(); saveState(); flashHint('Mua thành công!'); }
+
+function genQuestion(level=1){ const ops = level < 3 ? ['+','-'] : ['+','-','×','÷']; const op = ops[rand(0, ops.length-1)]; let a = rand(1, 10 + level*5); let b = rand(1, 6 + level*3); if(op === '÷'){ const ans = rand(1, Math.max(1, Math.floor((10+level*5)/3))); b = rand(1, 6); a = ans * b; return { text:`${a} ÷ ${b} = ?`, answer: ans}; } if(op === '-'){ if(a < b) [a,b] = [b,a]; return { text:`${a} - ${b} = ?`, answer: a-b}; } if(op === '×') return { text:`${a} × ${b} = ?`, answer: a*b}; return { text:`${a} + ${b} = ?`, answer: a+b}; }
+
+function spawnBallsForQuestion(q){ balls = []; const correct = q.answer; const answers = new Set([correct]); while(answers.size < 5){ answers.add(correct + rand(-6,6) || correct + rand(1,5)); } const arr = Array.from(answers); for(let i=arr.length-1;i>0;i--){ const j=rand(0,i); [arr[i],arr[j]]=[arr[j],arr[i]]; } for(let i=0;i<arr.length;i++){ balls.push({ x: (i+1) * canvas.width / (arr.length+1), y: -rand(20,200), r: 28 + rand(-6,10), vy: 0.6 + Math.random()*0.8, answer: arr[i], color: `hsl(${rand(0,360)}, 70%, 60%)`, wobble: Math.random()*0.03 }); } }
+
+function playerShoot(){ const fireRateLevel = state.upgrades.fireRate || 1; const fireDelay = Math.max(120, 400 - (fireRateLevel-1)*40); const multi = Math.min(4, (state.upgrades.multiShot||1)); const nowTime = Date.now(); if(nowTime - lastShotAt < fireDelay) return; lastShotAt = nowTime; const baseSpeed = 8 + (state.upgrades.bulletSpeed||1)*2; const penetration = (state.upgrades.penetration || 0) > 0; const spread = (multi-1) * 8; const centerX = player.x + player.w/2; for(let i=0;i<multi;i++){ const angle = (-(spread)/2) + (i*(spread/(Math.max(1,multi-1)))); const rad = angle * (Math.PI/180); bulletList.push({ x: centerX, y: player.y, vx: Math.sin(rad) * (baseSpeed*0.3), vy: -Math.cos(rad) * baseSpeed, r: 6 + (state.upgrades.penetration?2:0), penetration: penetration, life: 200 }); } playSFX('shoot'); }
+
+document.addEventListener('keydown', e=>{ if(e.key === 'ArrowLeft' || e.key === 'a') input.left = true; if(e.key === 'ArrowRight' || e.key === 'd') input.right = true; if(e.key === ' ') { if(!gameRunning) startGame(); else playerShoot(); } });
+document.addEventListener('keyup', e=>{ if(e.key === 'ArrowLeft' || e.key === 'a') input.left = false; if(e.key === 'ArrowRight' || e.key === 'd') input.right = false; });
+canvas.addEventListener('touchstart', e=>{ e.preventDefault(); const rect = canvas.getBoundingClientRect(); const t = e.touches[0]; const x = t.clientX - rect.left; const third = canvas.width / 3; if(x < third) touchDir = -1; else if(x > 2*third) touchDir = 1; else playerShoot(); });
+canvas.addEventListener('touchend', e=>{ touchDir = 0; });
+
+function spawnParticles(x,y,color,qty=18){ for(let i=0;i<qty;i++){ particles.push({ x,y, vx: (Math.random()-0.5)*6, vy: (Math.random()-1.2)*6, life: 40 + Math.random()*40, color }); } }
+const sfx = { shoot: new Audio('https://www.soundjay.com/button/sounds/button-16.mp3'), correct: new Audio('https://www.soundjay.com/button/sounds/button-09.mp3'), wrong: new Audio('https://www.soundjay.com/button/sounds/button-10.mp3'), pickup: new Audio('https://www.soundjay.com/button/sounds/button-3.mp3'), gameover: new Audio('https://www.soundjay.com/misc/sounds/fail-buzzer-01.mp3') };
+let sfxOn = true;
+function playSFX(name){ if(!sfxOn) return; try{ sfx[name].currentTime = 0; sfx[name].play(); }catch(e){} }
+
+const achievementDefs = [ { id:'firstWin', title:'Người chơi mới', desc:'Đạt điểm 1', check: st => st.score>=1 }, { id:'score10', title:'Điểm 10', desc:'Đạt điểm 10', check: st => st.score>=10 }, { id:'coins100', title:'Tiền 100', desc:'Sở hữu 100 coins', check: st => st.coins>=100 } ];
+function checkAchievements(){ for(const a of achievementDefs){ if(state.achievements[a.id]) continue; if(a.check({score, coins: state.coins})){ state.achievements[a.id] = Date.now(); saveState(); flashHint('Achievement: ' + a.title); } } }
+function renderAchievements(){ const box = $('achList'); box.innerHTML = ''; for(const a of achievementDefs){ const unlocked = state.achievements[a.id]; const div = document.createElement('div'); div.className = 'small'; div.style.opacity = unlocked ? 1 : 0.6; div.style.display = 'flex'; div.style.justifyContent='space-between'; div.innerHTML = `<div>${a.title}<div style="font-size:12px;color:var(--muted)">${a.desc}</div></div><div style="align-self:center">${unlocked ? '✓' : '...'}</div>`; box.appendChild(div); } }
+
+$('btnStart').addEventListener('click', ()=>{ if(!gameRunning) startGame(); else { gamePaused = !gamePaused; flashHint(gamePaused? 'Game PAUSED' : 'Unpaused'); } });
+$('btnPause').addEventListener('click', ()=>{ gamePaused = !gamePaused; flashHint(gamePaused? 'Game PAUSED' : 'Unpaused'); });
+function claimDaily(){ const today = new Date().toDateString(); if(state.lastDaily === today) { flashHint('Đã nhận thưởng hằng ngày'); return false; } const reward = 30 + rand(0,40); state.coins += reward; state.lastDaily = today; saveState(); $('coins').textContent = state.coins; flashHint(`Nhận thưởng hằng ngày: +${reward} coins`); return true; }
+
+function startGame(){ gameRunning = true; gamePaused = false; score = 0; coinsEarnedThisRun = 0; timeLeft = 45; currentQuestion = genQuestion(state.profile.level); spawnBallsForQuestion(currentQuestion); balls.forEach(b=> b.y = rand(-200, -20)); $('score').textContent = score; lastTick = now(); flashHint('Game bắt đầu! Bắn đáp án đúng!'); requestAnimationFrame(loop); }
+
+function endRun(){ gameRunning = false; playSFX('gameover'); const coinsReward = Math.max(5, Math.floor(score * 1.2)); state.coins += coinsReward; state.profile.xp += score * 2; const xpToLevel = state.profile.level * 50; while(state.profile.xp >= xpToLevel){ state.profile.xp -= xpToLevel; state.profile.level += 1; flashHint('Lên cấp! Level ' + state.profile.level); } if(score > state.profile.topScore) { state.profile.topScore = score; } state.leaders.push({ name: state.profile.name, score, date: Date.now() }); state.leaders.sort((a,b)=>b.score - a.score); state.leaders = state.leaders.slice(0,10); saveState(); $('coins').textContent = state.coins; $('playerLevel').textContent = state.profile.level; $('topScore').textContent = state.profile.topScore; renderShop(); renderAchievements(); flashHint(`Kết thúc! Điểm: ${score}. +${coinsReward} coins`); }
+
+function loop(){ const t = now(); const dt = t - lastTick; lastTick = t; if(gameRunning && !gamePaused){ updateGame(dt/1000); } render(); if(gameRunning) requestAnimationFrame(loop); }
+
+function updateGame(dt){ const speed = 240; if(input.left) player.x -= speed*dt; if(input.right) player.x += speed*dt; if(touchDir) player.x += touchDir * speed*dt; player.x = clamp(player.x, 8, canvas.width - player.w - 8); player.y = canvas.height - 60; for(let i=bulletList.length-1;i>=0;i--){ const b = bulletList[i]; b.x += b.vx; b.y += b.vy; b.life -= 1; for(let j=balls.length-1;j>=0;j--){ const ball = balls[j]; const dx = b.x - ball.x; const dy = b.y - ball.y; if(dx*dx + dy*dy <= (b.r + ball.r)*(b.r + ball.r)){ if(ball.answer === currentQuestion.answer){ score += 1; coinsEarnedThisRun += 1; state.coins += 1; playSFX('correct'); spawnParticles(ball.x, ball.y, ball.color, 22); currentQuestion = genQuestion(state.profile.level); spawnBallsForQuestion(currentQuestion); checkAchievements(); } else { score = Math.max(0, score - 1); playSFX('wrong'); spawnParticles(ball.x, ball.y, '#444', 10); } if(!b.penetration) { bulletList.splice(i,1); } else { b.penetration = false; } break; } } if(b.life <= 0 || b.y < -50 || b.y > canvas.height + 50) bulletList.splice(i,1); } for(const ball of balls){ ball.vy += 0.02; ball.y += ball.vy + Math.sin(now() * ball.wobble/600) * 0.6; if(ball.y - ball.r > canvas.height){ if(ball.answer === currentQuestion.answer){ flashHint('Bạn bỏ lỡ câu hỏi! -5s'); timeLeft -= 5; score = Math.max(0, score - 2); currentQuestion = genQuestion(state.profile.level); spawnBallsForQuestion(currentQuestion); } else { ball.y = -rand(30,200); } } } for(let i=particles.length-1;i>=0;i--){ const p = particles[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.12; p.life -= 1; if(p.life <= 0) particles.splice(i,1); } timeLeft -= dt; if(timeLeft <= 0){ endRun(); } $('score').textContent = score; $('coins').textContent = state.coins; }
+
+function render(){ const W = canvas.width, H = canvas.height; ctx.clearRect(0,0,W,H); const g = ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#071a2d'); g.addColorStop(1,'#082033'); ctx.fillStyle = g; ctx.fillRect(0,0,W,H); const sX = W * 0.1, sY = H * 0.12; const rg = ctx.createRadialGradient(sX, sY, 10, sX, sY, 160); rg.addColorStop(0,'rgba(124,58,237,0.14)'); rg.addColorStop(1,'rgba(124,58,237,0)'); ctx.fillStyle = rg; ctx.fillRect(0,0,W,H); ctx.fillStyle = 'rgba(255,255,255,0.03)'; roundRect(ctx, W/2 - 260, 18, 520, 80, 12); ctx.fill(); ctx.fillStyle = '#dff4ff'; ctx.font = '20px Inter, "Comic Sans MS"'; ctx.textAlign = 'center'; const txt = currentQuestion ? currentQuestion.text : 'Nhấn BẮT ĐẦU để chơi'; ctx.fillText(txt, W/2, 52); ctx.font = '14px Inter'; ctx.fillStyle = '#a8d6ff'; ctx.fillText(`Thời gian: ${Math.ceil(timeLeft)}s   |   Level: ${state.profile.level}`, W/2, 76); for(const ball of balls){ ctx.beginPath(); ctx.ellipse(ball.x + 6, ball.y + ball.r + 10, ball.r*0.8, ball.r*0.28, 0, 0, Math.PI*2); ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.fill(); const gg = ctx.createRadialGradient(ball.x - ball.r*0.25, ball.y - ball.r*0.25, ball.r*0.1, ball.x, ball.y, ball.r); gg.addColorStop(0, '#ffffff'); gg.addColorStop(1, ball.color); ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fillStyle = gg; ctx.fill(); ctx.fillStyle = '#052436'; ctx.font = `${Math.max(14, ball.r/1.6)}px Inter`; ctx.textAlign = 'center'; ctx.fillText(ball.answer, ball.x, ball.y + (ball.r/6)); } for(const b of bulletList){ ctx.beginPath(); ctx.fillStyle = '#fff'; ctx.ellipse(b.x, b.y, b.r, b.r*1.3, 0, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(b.x - b.r/2, b.y - b.r/2, b.r, b.r/2); } ctx.save(); ctx.translate(player.x + player.w/2, player.y + player.h/2); ctx.fillStyle = '#ff7043'; ctx.fillRect(-player.w/2, -player.h/2, player.w, player.h); ctx.beginPath(); ctx.fillStyle = '#ffab91'; ctx.rect(-14, -player.h - 14, 28, 20); ctx.fill(); ctx.restore(); for(const p of particles){ ctx.fillStyle = p.color; ctx.globalAlpha = clamp(p.life/60,0,1); ctx.fillRect(p.x, p.y, 3, 3); ctx.globalAlpha = 1; } const hint = $('overlayHint'); hint.textContent = `Press ← → or touch sides • Tap center to shoot • Upgrades unlock more fun!`; }
+
+function roundRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+let hintTimer = null;
+function flashHint(txt, ms=1800){ const el = $('overlayHint'); el.style.opacity = 1; el.style.transition = 'none'; el.textContent = txt; if(hintTimer) clearTimeout(hintTimer); hintTimer = setTimeout(()=>{ el.style.transition = 'opacity 600ms'; el.style.opacity = 0.7; el.textContent = ''; }, ms); }
+
+renderShop(); renderAchievements();
+$('btnReset').onclick = ()=>{ if(confirm('Xác nhận reset toàn bộ dữ liệu?')){ localStorage.removeItem(STORAGE_KEY); location.reload(); } };
+$('btnExport').onclick = ()=> { const csv = ['name,score,date', ...state.leaders.map(l=>`${l.name},${l.score},${new Date(l.date).toLocaleString()}`)].join('\n'); const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'leaders.csv'; a.click(); URL.revokeObjectURL(url); };
+window.addEventListener('load', ()=>{ const d = new Date().toDateString(); if(state.lastDaily !== d){ setTimeout(()=>{ if(confirm('Nhận thưởng hằng ngày? (miễn phí)')) claimDaily(); }, 700); } });
+(function idleLoop(){ render(); requestAnimationFrame(idleLoop); })();
+currentQuestion = genQuestion(state.profile.level); spawnBallsForQuestion(currentQuestion);
+setInterval(saveState, 3000);
+let shootHold = false;
+document.addEventListener('keydown', e=>{ if(e.key === ' ') shootHold = true; });
+document.addEventListener('keyup', e=>{ if(e.key === ' ') shootHold = false; });
+setInterval(()=>{ if(gameRunning && !gamePaused && (shootHold || state.upgrades.autoFire)){ playerShoot(); } }, 120);
+
+</script>
+
+<script>
+/* register service worker (sw.js) for PWA */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(()=>console.log('SW registered')).catch(()=>console.log('SW failed'));
+}
+</script>
+</body>
+</html>
