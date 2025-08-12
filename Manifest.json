@@ -1,0 +1,15 @@
+{
+  "name": "MathBlaster Ultra",
+  "short_name": "MathBlaster",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#071a2d",
+  "theme_color": "#7c3aed",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1828/1828884.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
